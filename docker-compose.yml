@@ -1,0 +1,65 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    environment:
+      # Basic Config
+      N8N_HOST: n8n.example.duckdns.orh # Adjust to your domain
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      NODE_ENV: production
+      WEBHOOK_URL: https://n8n.example.duckdns.orh # Adjust to your domain
+      GENERIC_TIMEZONE: Europe/Paris  # Adjust to local timezone
+      # Tuning
+      N8N_PAYLOAD_SIZE_MAX: 250 #Increase payload size to 250MB from default 16MB
+      N8N_DEFAULT_BINARY_DATA_MODE: filesystem #Bypass issues with uploading large files to Google Drive
+      N8N_RUNNERS_ENABLED: true #Enable the execution of user-provided JavaScript Code
+      NODE_FUNCTION_ALLOW_BUILTIN: "*" #Allow Code node to import modules
+      NODE_FUNCTION_ALLOW_EXTERNAL: "*" #Allow the use of community nodes
+    # ports:
+    #   - 5678:5678
+    volumes:
+      - C:/HomeStack/n8n/data:/home/node/.n8n
+      - C:/HomeStack/videos:/videos
+    restart: unless-stopped
+
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - C:/HomeStack/npm/data:/data
+      - C:/HomeStack/npm/letsencrypt:/etc/letsencrypt
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - CUDA_VISIBLE_DEVICES=0
+      - LOG_LEVEL=debug
+    # ports:
+    #   - 11434:11434
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  ollama:
+
+networks:
+  default:
+    external: true
+    name: home-stack-network

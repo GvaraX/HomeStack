@@ -26,7 +26,7 @@ Follow the [Phase 0 - Selfhosting n8n](phase-0-selfhosting-n8n.md) to set up the
 ## Process Overview
 The entire workflow is automated using n8n workflows, consisting of seven key phases:
 
-### Phase 1 - Story Generation
+### [Phase 1 - Story Generation](phase-1-story-generation.md)
 Creating engaging narratives and visual concepts using LLMs tailored to a specific niche.
 - **Input:** Niche/topic selection
 - **Outputs:**

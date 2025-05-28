@@ -1,0 +1,244 @@
+{
+  "name": "Story Generation - Level 3",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "2c322dca-91d6-467c-a7a9-78a14b37217c",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "qwen3:latest",
+          "mode": "list",
+          "cachedResultName": "qwen3:latest"
+        },
+        "options": {
+          "responseFormat": "json_object",
+          "temperature": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        260
+      ],
+      "id": "63d61a6b-1621-4fae-abba-5ca4a8ed84e6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "rLJt2FFycy2KTZFg",
+          "name": "Ollama"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"story\": {\n      \"type\": \"string\",\n      \"minLength\": 100,\n      \"description\": \"A complete narrative story with beginning, middle, and end\"\n    }\n  },\n    \"required\": [\"story\"],\n    \"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        260
+      ],
+      "id": "3afd2b68-0729-4b35-a681-af3e7c44243e",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"script\": {\n      \"type\": \"string\",\n      \"minLength\": 100,\n      \"description\": \"A complete narrative story with beginning, middle, and end\"\n    }\n  },\n    \"required\": [\"script\"],\n    \"additionalProperties\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        380,
+        260
+      ],
+      "id": "f0b130c1-5862-4c95-a7dc-eea0ebd7a7de",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"scenes\": {\n      \"type\": \"array\",\n      \"minItems\": 6,\n      \"maxItems\": 6,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"scene_description\": {\n            \"type\": \"string\",\n            \"description\": \"A detailed description of a scene.\"\n          }\n        },\n        \"required\": [\"scene_description\"]\n      }\n    }\n  },\n  \"required\": [\"scenes\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        260
+      ],
+      "id": "37f7aff3-97c8-4c8e-a463-f8116fbee966",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "### Task1:  \nWrite a short story (3–5 paragraphs) about a fluffy animal that should serve as a foundation for a visual narrative.  \n\n**Requirements:**  \n1. **Character:**  \n   - Give the character a unique, creative name.  \n   - Describe it as charming, visually appealing, and full of personality. \n\n2. **Story:**  \n   - Include a clear theme (e.g., friendship, adventure, self-discovery).\n   - Use vivid, sensory language to inspire visual storytelling.\n\n3. **Output Format:**  \n   - Return a JSON object with:  \n     - `\"story\"`: The full narrative (plain text).",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a whimsical and imaginative storyteller, specialized in crafting short, visually rich narratives. Your stories should evoke warmth, charm, and emotional connection, with a focus on unique, fluffy protagonists. Always ensure creative naming, vivid descriptions, and a clear thematic core. Write in plain text, and strictly follow JSON output formatting when required."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -180,
+        0
+      ],
+      "id": "15aa5c14-ddea-4eec-ae9d-acc18e2d69c1",
+      "name": "Generate Story",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### Task3:\nTranslate the story below into six distinct scenes that visually narrate the plot with rich, dynamic detail. Leverage the detailed character and setting descriptions from the input variables and incorporate the narrative outline elements to guide the scene structure.\n\n**Story**\n{{ $('Generate Story').last().json.output.story }}\n\n1. **Instructions:**  \n- Create **6 scenes** (as a JSON array).  \n- **Rules for Each Scene:**  \n  - **Scene 1:** Introduce the character’s problem—convey an immediate sense of challenge or conflict in a visually engaging way.  \n  - **Scene 2:** Show the character trying and humorously failing at a relatable task, using dynamic action and vivid imagery that emphasize the character’s unique traits.  \n  - **Scene 3:** Depict a turning point with a sudden burst of insight or realization, using striking visuals that underline the character's emerging strength.  \n  - **Scene 4:** Portray the character’s creative success with intricate details that highlight both the unique character traits and the vibrant setting.  \n  - **Scene 5:** Illustrate a moment of joyful celebration or recognition of the character’s success, with lively interactions and colorful details that highlight the impact of their journey.  \n  - **Scene 6:** Conclude with a heartwarming resolution, delivering a clear visual lesson or takeaway with emotional impact.  \n- **Important:**  \n  - **Each scene description must be 2–3 sentences long.**  \n  - **Include the full, exact `character` description verbatim in every scene.** Do not use variable placeholders like ` the character`; the description should appear in full detail (e.g., color, species, clothing, and unique features).  \n  - **Integrate the full `setting` details verbatim into each scene,** ensuring the background is vivid, consistent, and contextually appropriate.  \n  - **Describe clear actions and interactions** for the character: what the character is doing, its facial expressions, interactions with other characters (if any), and any specific objects or environmental elements—avoiding any human-related elements.  \n  - Use a rich, descriptive style similar to the following example:  \n    > \"A bright yellow duck, wearing oversized mirrored sunglasses and a tropical flower necklace, balances expertly on a surfboard, cutting through the crest of an enormous wave. The water is a swirling mix of blues and greens, foamy spray frozen in time as it arcs around the duck’s outstretched wings. The horizon stretches endlessly in the background, where the setting sun casts a golden glow across the ocean’s surface.\"\n\n### Example Output Format:  \n```json\n{\n  \"scenes\": [\n    {\n      \"scene_description\": \"A highly detailed 3D render of...\"\n    },\n    // ...5 more scenes\n  ]\n}\n``` ",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a cinematic storyboard artist specializing in visually rich, dynamic scene descriptions for animated narratives. Your expertise lies in translating story beats into vivid, frame-worthy imagery while maintaining strict consistency with character and setting details. Every scene must include the full character/setting descriptions verbatim and focus on action-driven visuals—no introspective or humanized elements."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        580,
+        0
+      ],
+      "id": "90598b8a-1e17-47fc-b01a-e2a04e52816a",
+      "name": "Generate Visual Prompts",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### Task2:\nCraft a concise 30-second narrative script to be used as a voiceover or text in the video. The script should encapsulate the story below, ending with an engaging call-to-action or question.\n\n**Story:**\n{{ $json.output.story }}\n\n**Instructions:**  \n- Write in plain text only.  \n- The narrative must be written in the specified language: English.\n- **Structure the script according to the following timeline:**  \n  - **0–5 sec (Hook):** Begin mid-action with the character and their initial problem. Use the `hook` element.  \n  - **5–15 sec (Conflict/Humor):** Highlight the struggle with a humorous twist using the character’s traits. Use the `conflict` element.  \n  - **15–30 sec (Resolution + Lesson):** Show how the character turns the problem around, incorporating the `climax` and `resolution` elements, and conclude with the `cta`.  \n- **Do not include any labels, markers, or extraneous sound descriptions (e.g., \"(0-5 sec - Hook)\" or \"Sounds...\").**  \n- **Enforce a maximum duration of 30 seconds for the entire script.**  \n\n**Output Format:**  \nReturn the response as JSON following this structure:\n```\njson\n{\n  \"script\": \"<The full narrative script written as plain text in the specified language>\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a professional scriptwriter specializing in ultra-concise, emotionally engaging narratives for short-form video content. Your expertise lies in structuring 30-second stories with perfect pacing—hooks that grab attention, conflicts that entertain, and resolutions that deliver satisfying lessons. You strictly adhere to time constraints (5s/10s/15s segments) and write in clean, voiceover-ready plain text without any technical markers."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        200,
+        0
+      ],
+      "id": "906e6dbf-a309-445b-9a05-e5f05dfdf35f",
+      "name": "Generate Narrative Script",
+      "retryOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Generate Story",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Story",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Narrative Script",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Visual Prompts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Story",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Narrative Script",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Visual Prompts",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Story": {
+      "main": [
+        [
+          {
+            "node": "Generate Narrative Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Narrative Script": {
+      "main": [
+        [
+          {
+            "node": "Generate Visual Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e0baf6dd-756e-4fe9-9647-d17e619394f6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "121c0a0c44ee23a0e3cfd057cf4fe107dbf61a7b0ac4cfdcc4832335e630bf85"
+  },
+  "id": "F0rsq1Qcr9BfxZuy",
+  "tags": []
+}

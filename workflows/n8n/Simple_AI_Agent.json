@@ -1,0 +1,312 @@
+{
+  "name": "Simple AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        240
+      ],
+      "id": "3fe726c0-5012-4655-9600-d637b15381e2",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "search_repositories",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', `description: \"Search for GitHub repositories\"\nschema:\n  type: object\n  properties:\n    query:\n      type: string\n      description: \"Search query (see GitHub search syntax)\"\n    page:\n      type: number\n      description: \"Page number for pagination (default: 1)\"\n    perPage:\n      type: number\n      description: \"Number of results per page (default: 30, max: 100)\"\n  required:\n    - query\n  additionalProperties: false\n  $schema: \"http://json-schema.org/draft-07/schema#\"`, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        240
+      ],
+      "id": "4ac90bda-1ee8-49ad-973f-8b927f110147",
+      "name": "GitHub",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "MHsEdlvXjmaxMEJj",
+          "name": "GitHub"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "cityName": "=Paris, fr"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        1480,
+        240
+      ],
+      "id": "c5bb48ed-a855-44b7-83e8-7bf3d40609a5",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "HgfRaJsCFliP2esx",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "852213d7-0ffe-48c0-b122-c8c9c908bd8d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "qwen3:latest",
+          "mode": "list",
+          "cachedResultName": "qwen3:latest"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        240
+      ],
+      "id": "c1d8d433-6477-42aa-a304-b72405227bd3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "rLJt2FFycy2KTZFg",
+          "name": "Ollama"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1620,
+        240
+      ],
+      "id": "31ba4d71-6f43-4997-bbef-7ff37ec61cb2",
+      "name": "Gmail",
+      "webhookId": "c4058ff7-e848-48bf-bcfd-24638dbb57a3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MSu7G3mOBUIu0Ldo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1720,
+        240
+      ],
+      "id": "8be09ca5-c045-4e1d-85f4-8ecf78d9ba79",
+      "name": "Gmail1",
+      "webhookId": "708df7ce-a205-4753-bf8a-794b168e0038",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MSu7G3mOBUIu0Ldo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "airbnb_search",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', `Description: Search for Airbnb listings with various filters and pagination. Provide direct links to the user.  \n\nSchema:\n  Unknown Keys: strip  \n  Catchall:  \n    Definition:  \n      Type Name: ZodNever  \n    Standard:  \n      Version: 1  \n      Vendor: zod  \n  Type Name: ZodObject  \n  Standard:  \n    Version: 1  \n    Vendor: zod  \n  Cached: null  `, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        240
+      ],
+      "id": "59d6c1c8-aa17-4388-a779-a39eb3be1f0b",
+      "name": "Airbnb",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "R7hi4UlcDznJMN6P",
+          "name": "Airbnb MCP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        0
+      ],
+      "id": "2543db38-70f0-43ac-b3eb-c3ba44512f29",
+      "name": "When chat message received",
+      "webhookId": "1fb25bb4-dd16-4bab-9ac2-9ca4122d5184"
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "brave_web_search",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', `description: \"Performs a web search using the Brave Search API, ideal for general queries, news, articles, and online content. Use this for broad information gathering, recent events, or when you need diverse web sources. Supports pagination, content filtering, and freshness controls. Maximum 20 results per request, with offset for pagination.\"\n\nschema:\n  type: object\n  properties:\n    query:\n      type: string\n      description: \"Search query (max 400 chars, 50 words)\"\n    count:\n      type: number\n      description: \"Number of results (1-20, default 10)\"\n    offset:\n      type: number\n      description: \"Pagination offset (max 9, default 0)\"\n  required:\n    - query\n  additionalProperties: false\n  $schema: \"http://json-schema.org/draft-07/schema#\"`, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        240
+      ],
+      "id": "7d4685b7-e1a1-4a8f-81e5-3baa2c08fc1c",
+      "name": "Brave Search",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "XMNMPAV3xTFh2QIP",
+          "name": "Brave Search MCP"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GitHub": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeatherMap": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airbnb": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brave Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8987c273-8167-4a16-b74a-4b7ce09d0ffb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "121c0a0c44ee23a0e3cfd057cf4fe107dbf61a7b0ac4cfdcc4832335e630bf85"
+  },
+  "id": "XNwOTsdrPLx6C3hx",
+  "tags": []
+}

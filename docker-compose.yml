@@ -56,9 +56,28 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
+  localai:
+    image: localai/localai:latest-gpu-nvidia-cuda-12
+    container_name: localai
+    environment:
+      - MODELS_PATH=/models
+    # ports:
+    #   - 8080:8080
+    volumes:
+      - localai:/models:cached
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
 volumes:
   ollama:
-
+  localai:
+  
 networks:
   default:
     external: true

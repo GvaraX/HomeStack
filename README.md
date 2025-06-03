@@ -40,7 +40,7 @@ Creating engaging narratives and visual concepts using LLMs tailored to a specif
   - llama3.1:8b
   - qwen2.5:14b
 
-### Phase 2: Image Generation
+### [Phase 2: Image Generation](phase2-image-generation.md)
 Transforming text prompts into consistent, high-quality visuals that align with the narrative.
 - **Input:** 6 visual scene prompts
 - **Output:** 6 consistent, high-quality images

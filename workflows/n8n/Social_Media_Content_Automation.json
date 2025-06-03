@@ -1,6 +1,69 @@
 {
-  "name": "Social Media Content Automation",
+  "name": "Story and Images Generation",
   "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst path = require('path');\n\n// Function to format date as YYYY-MM-DD_HH:MM\nconst getFormattedDate = () => {\n  const now = new Date();\n  const year = now.getFullYear();\n  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based\n  const day = String(now.getDate()).padStart(2, '0');\n  const hours = String(now.getHours()).padStart(2, '0');\n  const minutes = String(now.getMinutes()).padStart(2, '0');\n  return `${year}-${month}-${day}_${hours}-${minutes}`;\n};\n\n// Create a directory with the formatted date as its name\nconst createTempFolder = async () => {\n  const TmpFolderName = getFormattedDate();\n  const tempDir = path.join('/videos', TmpFolderName);\n  \n  if (!fs.existsSync(tempDir)) {\n    fs.mkdirSync(tempDir, { recursive: true });\n  }\n  \n  return [{ json: { TmpFolderName } }];\n};\n\n// Execute the function\nreturn createTempFolder();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        720
+      ],
+      "id": "ac91e76b-0dc8-4863-865b-1d2e93b5389d",
+      "name": "Create TMP Folder",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/videos/{{ $('Create TMP Folder').last().json.TmpFolderName }}/image-{{$node[\"Loop Over Items1\"].context[\"currentRunIndex\"]+1;}}.png",
+        "dataPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        860
+      ],
+      "id": "bc994c45-5e9c-41ba-b984-180131dcf441",
+      "name": "Save Images"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        680,
+        720
+      ],
+      "id": "7eeaab78-e4af-4933-a160-b32a86e16aec",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "workflow": "={\n  \"1\": {\n    \"inputs\": {\n      \"ckpt_name\": \"disneyrealcartoonmix_v10.safetensors\"\n    },\n    \"class_type\": \"CheckpointLoaderSimple\",\n    \"_meta\": {\n      \"title\": \"Load Checkpoint\"\n    }\n  },\n  \"2\": {\n    \"inputs\": {\n      \"stop_at_clip_layer\": -2,\n      \"clip\": [\n        \"1\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPSetLastLayer\",\n    \"_meta\": {\n      \"title\": \"CLIP Set Last Layer\"\n    }\n  },\n  \"3\": {\n    \"inputs\": {\n      \"text\": \"{{ $json.character.replace(/\\r?\\n/g, '\\\\n') }}. {{ $json.scene_description.replace(/\\r?\\n/g, '\\\\n') }}.\\n\\n(masterpiece, best quality, high quality, highres), absurdres, no humans, masterpiece, very aesthetic, absurdres\",\n      \"clip\": [\n        \"15\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"4\": {\n    \"inputs\": {\n      \"text\": \"(worst quality, low quality, bad quality), (low resolution, blurry, pixelated), bad anatomy, distorted anatomy, extra limbs, extra hands, extra fingers, missing limbs, missing hands, mutated hands, deformed hands, twisted hands, bad hands, fused fingers, malformed fingers, poorly drawn hands, poorly drawn face, (ugly, disfigured, grotesque), (mutated, malformed, unnatural), (glitch, artifacts, watermark, text, logo, signature), (sketch, cartoon, painting, crayon, graphite, abstract, impressionistic, figuration-libre), (simplified, low-detail, flat), (backlight, overexposed, underexposed), (censored, nsfw), (furry, human, 1girl, muscular), (dull, boring, earthly, mundane), (cluttered, messy, chaotic), (duplicate, repetitive), (out of focus, motion blur, depth of field issues), (jpeg artifacts, compression artifacts)\",\n      \"clip\": [\n        \"15\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"5\": {\n    \"inputs\": {\n      \"seed\": 336889124359579,\n      \"steps\": 25,\n      \"cfg\": 5.5,\n      \"sampler_name\": \"dpmpp_2m\",\n      \"scheduler\": \"karras\",\n      \"denoise\": 1,\n      \"model\": [\n        \"15\",\n        0\n      ],\n      \"positive\": [\n        \"3\",\n        0\n      ],\n      \"negative\": [\n        \"4\",\n        0\n      ],\n      \"latent_image\": [\n        \"6\",\n        0\n      ]\n    },\n    \"class_type\": \"KSampler\",\n    \"_meta\": {\n      \"title\": \"KSampler\"\n    }\n  },\n  \"6\": {\n    \"inputs\": {\n      \"width\": 720,\n      \"height\": 1280,\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\n      \"title\": \"Empty Latent Image\"\n    }\n  },\n  \"8\": {\n    \"inputs\": {\n      \"filename_prefix\": \"ComfyUI\",\n      \"images\": [\n        \"9\",\n        0\n      ]\n    },\n    \"class_type\": \"SaveImage\",\n    \"_meta\": {\n      \"title\": \"Save Image\"\n    }\n  },\n  \"9\": {\n    \"inputs\": {\n      \"tile_size\": 512,\n      \"overlap\": 64,\n      \"temporal_size\": 64,\n      \"temporal_overlap\": 8,\n      \"samples\": [\n        \"5\",\n        0\n      ],\n      \"vae\": [\n        \"1\",\n        2\n      ]\n    },\n    \"class_type\": \"VAEDecodeTiled\",\n    \"_meta\": {\n      \"title\": \"VAE Decode (Tiled)\"\n    }\n  },\n  \"15\": {\n    \"inputs\": {\n      \"PowerLoraLoaderHeaderWidget\": {\n        \"type\": \"PowerLoraLoaderHeaderWidget\"\n      },\n      \"lora_1\": {\n        \"on\": true,\n        \"lora\": \"detailed_notrigger.safetensors\",\n        \"strength\": 0.75\n      },\n      \"lora_2\": {\n        \"on\": true,\n        \"lora\": \"neg4all_bdsqlsz_xl_V91.safetensors\",\n        \"strength\": 1\n      },\n      \"➕ Add Lora\": \"\",\n      \"model\": [\n        \"1\",\n        0\n      ],\n      \"clip\": [\n        \"2\",\n        0\n      ]\n    },\n    \"class_type\": \"Power Lora Loader (rgthree)\",\n    \"_meta\": {\n      \"title\": \"Power Lora Loader (rgthree)\"\n    }\n  }\n}"
+      },
+      "type": "n8n-nodes-comfyui.comfyui",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        720
+      ],
+      "id": "006b9698-e278-4bb5-9eed-84ba364fd303",
+      "name": "Comfy SDXL",
+      "credentials": {
+        "comfyUIApi": {
+          "id": "htNUXGzgCxTZ1mj6",
+          "name": "ComfyUI account"
+        }
+      }
+    },
     {
       "parameters": {
         "schemaType": "manual",
@@ -9,10 +72,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        260,
-        220
+        540,
+        320
       ],
-      "id": "6bc033d0-b606-446d-ab00-2a709c6efdde",
+      "id": "19da4821-8cff-4eaa-bacc-cbf3757ea468",
       "name": "Structured Output Parser - 1"
     },
     {
@@ -23,28 +86,28 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        500,
-        300
+        780,
+        400
       ],
-      "id": "aa509c1f-5eaa-4fa0-b602-9325406bdb8d",
+      "id": "3fb3cd8b-d737-4ebd-a508-93f20c3b6d3b",
       "name": "Structured Output Parser - 2"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=**Task:**  \nWrite a short story (3–5 paragraphs) about {{ $json.Topic }} that should serve as a foundation for a visual narrative.  \n\n**Requirements:**  \n1. **Character:**  \n   - Give the character a unique, creative name.  \n   - Describe it as charming, visually appealing, and full of personality. \n\n2. **Story:**  \n   - Include a clear theme (e.g., friendship, adventure, self-discovery).\n   - Use vivid, sensory language to inspire visual storytelling.\n\n3. **Output Format:**  \n   - Return a JSON object with:  \n     - `\"story\"`: The full narrative (plain text).",
+        "text": "=**Task:**  \nWrite a short story (3–5 paragraphs) about {{ $json.Topic}}. The story should serve as a foundation for a visual narrative.  \n\n**Requirements:**  \n1. **Character:**  \n   - Give the character a unique, creative name.  \n   - Describe it as charming, visually appealing, and full of personality. \n\n2. **Story:**  \n   - Include a clear theme (e.g., friendship, adventure, self-discovery).\n   - Use vivid, sensory language to inspire visual storytelling.\n\n3. **Output Format:**  \n   - Return a JSON object with:  \n     - `\"story\"`: The full narrative (plain text).",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a whimsical and imaginative storyteller, specialized in crafting short, visually rich narratives. Your stories should evoke warmth, charm, and emotional connection, with a focus on unique, fluffy protagonists. Always ensure creative naming, vivid descriptions, and a clear thematic core. Write in plain text, and strictly follow JSON output formatting when required."
+          "systemMessage": "You are a whimsical and imaginative storyteller, specialized in crafting short, visually rich narratives. Your stories should evoke warmth, charm, and emotional connection, with a focus on unique, fluffy protagonists. Always ensure creative naming, vivid descriptions, and a clear thematic core. Write in plain text, and strictly follow JSON output formatting when required. /no_think"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        240,
-        0
+        520,
+        100
       ],
-      "id": "305008e4-a203-4700-8b8a-e3666f41c1c8",
+      "id": "b737ddba-6aba-42c1-8d10-71aa0e20c64d",
       "name": "Generate a Short Story",
       "retryOnFail": true,
       "maxTries": 5
@@ -55,16 +118,16 @@
         "text": "=**Task:**  \nBreak down the narrative of the story into a clear outline that highlights the key structural elements.\n\n**Instructions:**  \n- Identify and list the narrative components:\n  - **Hook:** (0–5 seconds of a video).\n  - **Conflict/Challenge:** (5–10 seconds).\n  - **Climax/Turning Point:** (10-15 seconds)\n  - **Resolution:** and lesson learned (15–30 seconds).\n  - **Call-to-Action (CTA) or Question:** A prompt that engages the audience at the end.\n\n- **Output Format:** Return a JSON object with the following keys without any introductory messages or explanations:\n  - `\"hook\"`\n  - `\"conflict\"`\n  - `\"climax\"`\n  - `\"resolution\"`\n  - `\"cta\"`",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a meticulous narrative architect, skilled at dissecting stories into their core structural elements for visual or animated storytelling. Your expertise lies in identifying key moments that maximize emotional engagement, pacing, and audience retention. Always deliver concise, actionable breakdowns tailored for short-form video (30 seconds or less) and strictly adhere to JSON formatting."
+          "systemMessage": "You are a meticulous narrative architect, skilled at dissecting stories into their core structural elements for visual or animated storytelling. Your expertise lies in identifying key moments that maximize emotional engagement, pacing, and audience retention. Always deliver concise, actionable breakdowns tailored for short-form video (30 seconds or less) and strictly adhere to JSON formatting. /no_think"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        600,
-        0
+        880,
+        100
       ],
-      "id": "38a18565-3052-4239-a4d8-857bc605c3cf",
+      "id": "e5875fc5-38e2-4cd0-9617-8952c85a276b",
       "name": "Develop a Narrative Outline",
       "retryOnFail": true,
       "maxTries": 5,
@@ -76,16 +139,16 @@
         "text": "=**Task:**  \nGenerate a precise visual description of characters and story settings. These descriptions will be used verbatim for consistent AI image generation.\n\n**Requirements:**  \n1. **Character Description:**  \n   - Provide a highly detailed description of the main character's physical appearance.\n   - Include specific clothing or accessories in details.\n   - Exclude all behavioral/personality details.\n\n2. **Setting Description:**  \n   - Location: Specific environment (e.g., forest, city, room).  \n   - Atmosphere: Time of day, lighting, weather.  \n   - Key visual elements: Objects, colors, textures.  \n\n**Output Format:**  \nReturn a JSON object with the following keys:\n  - `\"character\"`: A concise description of tcharacter physical appearance (e.g., \"A fluffy tabby cat with bright green eyes, soft orange fur, and a tiny blue bowtie.\")\n  - `\"setting\"`: A concise description of the visual environment (e.g., \"A sunlit garden with blooming flowers and a stone pathway, bathed in warm afternoon light.\")\n\n**Example output:**\n{\n  \"character\": \"A charming teddy bear named Fluffington...\",\n  \"setting\": \"Whispering Woods during a stormy night...\"\n}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are a highly detail-oriented visual descriptor specializing in creating consistent, image-generation-ready descriptions of characters and settings. Your focus is purely on physical appearance and environmental visuals—avoid all personality, behavior, or narrative elements. Descriptions must be concise yet rich in visual detail for perfect consistency across multiple scenes."
+          "systemMessage": "You are a highly detail-oriented visual descriptor specializing in creating consistent, image-generation-ready descriptions of characters and settings. Your focus is purely on physical appearance and environmental visuals—avoid all personality, behavior, or narrative elements. Descriptions must be concise yet rich in visual detail for perfect consistency across multiple scenes. /no_think"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        960,
-        0
+        1240,
+        100
       ],
-      "id": "b4226334-d54c-4c4e-97ec-7dc190d6a895",
+      "id": "d7275c02-a70c-4e89-bc6c-1e5e09894171",
       "name": "Develop Character and Setting",
       "retryOnFail": true,
       "maxTries": 5
@@ -102,10 +165,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        1680,
-        0
+        1960,
+        100
       ],
-      "id": "71384556-73ab-4dfe-8ffc-a72ed4298c6f",
+      "id": "8c03ce34-91e1-4714-8d4a-f65a15ea1751",
       "name": "Generate Visual Scenes",
       "retryOnFail": true,
       "maxTries": 5
@@ -118,10 +181,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        1040,
-        300
+        1320,
+        360
       ],
-      "id": "c4e0846c-ac67-4e8d-91ed-6a3e99d977d5",
+      "id": "a8097890-fcd1-4257-ae57-30979240bfcc",
       "name": "Structured Output Parser - 3"
     },
     {
@@ -132,10 +195,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        1860,
-        220
+        2140,
+        320
       ],
-      "id": "a4524083-79fa-4208-9d80-302ec43d6e1e",
+      "id": "63170fc0-31a0-40de-aad4-3e2ecfa9b684",
       "name": "Structured Output Parser - 5"
     },
     {
@@ -147,16 +210,16 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        1280,
-        360
+        1600,
+        460
       ],
-      "id": "ad91d5eb-81b7-4997-90a1-41f85342c087",
+      "id": "a263a754-9f67-47bd-b46f-d9ff0918e27e",
       "name": "Simple Memory"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Craft a concise 30-second narrative script to be used as a voiceover or text in the video. The script should encapsulate the story’s hook, conflict, climax, and resolution, ending with an engaging call-to-action or question.\n\n**Instructions:**  \n- Write in plain text only.  \n- The narrative must be written in the specified language: {{ $('On form submission').last().json['Language'] || \"French\" }}.\n- **Structure the script according to the following timeline:**  \n  - **0–5 sec (Hook):** Begin mid-action with the character and their initial problem. Use the `hook` element.  \n  - **5–15 sec (Conflict/Humor):** Highlight the struggle with a humorous twist using the character’s traits. Use the `conflict` element.  \n  - **15–30 sec (Resolution + Lesson):** Show how the character turns the problem around, incorporating the `climax` and `resolution` elements, and conclude with the `cta`.  \n- **Do not include any labels, markers, or extraneous sound descriptions (e.g., \"(0-5 sec - Hook)\" or \"Sounds...\").**  \n- **Enforce a maximum duration of 30 seconds for the entire script.**  \n\n- **Output Format:**  \nReturn the response as JSON following this structure:\n```\njson\n{\n  \"script\": \"<The full narrative script written as plain text in the specified language>\"\n}",
+        "text": "=Craft a concise 30-second narrative script to be used as a voiceover or text in the video. The script should encapsulate the story’s hook, conflict, climax, and resolution, ending with an engaging call-to-action or question.\n\n**Instructions:**  \n- Write in plain text only.  \n- The narrative must be written in the specified language: {{ $('On form submission').last().json['Language (Default: French)'] || \"French\" }}.  \n- **Structure the script according to the following timeline:**  \n  - **0–5 sec (Hook):** Begin mid-action with the character and their initial problem. Use the `hook` element.  \n  - **5–15 sec (Conflict/Humor):** Highlight the struggle with a humorous twist using the character’s traits. Use the `conflict` element.  \n  - **15–30 sec (Resolution + Lesson):** Show how the character turns the problem around, incorporating the `climax` and `resolution` elements, and conclude with the `cta`.  \n- **Do not include any labels, markers, or extraneous sound descriptions (e.g., \"(0-5 sec - Hook)\" or \"Sounds...\").**  \n- **Enforce a maximum duration of 30 seconds for the entire script.**  \n\n- **Output Format:**  \nReturn the response as JSON following this structure:\n```\njson\n{\n  \"script\": \"<The full narrative script written as plain text in the specified language>\"\n}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "You are a professional scriptwriter specializing in ultra-concise, emotionally engaging narratives for short-form video content. Your expertise lies in structuring 30-second stories with perfect pacing—hooks that grab attention, conflicts that entertain, and resolutions that deliver satisfying lessons. You strictly adhere to time constraints (5s/10s/15s segments) and write in clean, voiceover-ready plain text without any technical markers. /no_think"
@@ -165,10 +228,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        1320,
-        0
+        1600,
+        100
       ],
-      "id": "c55a539f-9fea-4269-b398-5f4191dd5153",
+      "id": "313738c0-c8b0-4ab8-9421-04a23174791d",
       "name": "Generate Narrative Script",
       "retryOnFail": true,
       "maxTries": 5
@@ -181,27 +244,210 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        1600,
-        300
+        1880,
+        400
       ],
-      "id": "18c09308-85fc-480d-aacd-a43835e40458",
+      "id": "50cb5b54-d1b5-4957-b24c-f06c98a2b70d",
       "name": "Structured Output Parser - 4"
+    },
+    {
+      "parameters": {
+        "workflow": "={\n  \"8\": {\n    \"inputs\": {\n      \"samples\": [\n        \"78\",\n        1\n      ],\n      \"vae\": [\n        \"55\",\n        0\n      ]\n    },\n    \"class_type\": \"VAEDecode\",\n    \"_meta\": {\n      \"title\": \"VAE Decode\"\n    }\n  },\n  \"9\": {\n    \"inputs\": {\n      \"filename_prefix\": \"\",\n      \"images\": [\n        \"8\",\n        0\n      ]\n    },\n    \"class_type\": \"SaveImage\",\n    \"_meta\": {\n      \"title\": \"Save Image\"\n    }\n  },\n  \"16\": {\n    \"inputs\": {\n      \"text\": \"{{ $json.character.replace(/\\r?\\n/g, '\\\\n')}} {{ $json.scene_description.replace(/\\r?\\n/g, '\\\\n') }}\\n\\n(masterpiece, best quality, high quality, highres), absurdres, no humans, masterpiece, very aesthetic, absurdres\",\n      \"clip\": [\n        \"54\",\n        0\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"Positive Prompt\"\n    }\n  },\n  \"40\": {\n    \"inputs\": {\n      \"text\": \"(worst quality, low quality, bad quality), (low resolution, blurry, pixelated), bad anatomy, distorted anatomy, extra limbs, extra hands, extra fingers, missing limbs, missing hands, mutated hands, deformed hands, twisted hands, bad hands, fused fingers, malformed fingers, poorly drawn hands, poorly drawn face, (ugly, disfigured, grotesque), (mutated, malformed, unnatural), (glitch, artifacts, watermark, text, logo, signature), (sketch, cartoon, painting, crayon, graphite, abstract, impressionistic, figuration-libre), (simplified, low-detail, flat), (backlight, overexposed, underexposed), (censored, nsfw), (furry, human, 1girl, muscular), (dull, boring, earthly, mundane), (cluttered, messy, chaotic), (duplicate, repetitive), (out of focus, motion blur, depth of field issues), (jpeg artifacts, compression artifacts)\",\n      \"clip\": [\n        \"54\",\n        0\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"Negative Prompt\"\n    }\n  },\n  \"54\": {\n    \"inputs\": {\n      \"clip_name1\": \"clip_l_hidream.safetensors\",\n      \"clip_name2\": \"clip_g_hidream.safetensors\",\n      \"clip_name3\": \"t5xxl_fp8_e4m3fn.safetensors\",\n      \"clip_name4\": \"llama_3.1_8b_instruct_fp8_scaled.safetensors\"\n    },\n    \"class_type\": \"QuadrupleCLIPLoader\",\n    \"_meta\": {\n      \"title\": \"QuadrupleCLIPLoader\"\n    }\n  },\n  \"55\": {\n    \"inputs\": {\n      \"vae_name\": \"ae.safetensors\"\n    },\n    \"class_type\": \"VAELoader\",\n    \"_meta\": {\n      \"title\": \"Load VAE\"\n    }\n  },\n  \"70\": {\n    \"inputs\": {\n      \"shift\": 6.000000000000001,\n      \"model\": [\n        \"82\",\n        0\n      ]\n    },\n    \"class_type\": \"ModelSamplingSD3\",\n    \"_meta\": {\n      \"title\": \"ModelSamplingSD3\"\n    }\n  },\n  \"74\": {\n    \"inputs\": {\n      \"cfg\": 5,\n      \"model\": [\n        \"70\",\n        0\n      ],\n      \"positive\": [\n        \"16\",\n        0\n      ],\n      \"negative\": [\n        \"40\",\n        0\n      ]\n    },\n    \"class_type\": \"CFGGuider\",\n    \"_meta\": {\n      \"title\": \"CFGGuider\"\n    }\n  },\n  \"75\": {\n    \"inputs\": {\n      \"detail_amount\": 0.1,\n      \"start\": 0.2,\n      \"end\": 0.8,\n      \"bias\": 0.5100000000000001,\n      \"exponent\": 1,\n      \"start_offset\": 0,\n      \"end_offset\": 0,\n      \"fade\": 0,\n      \"smooth\": true,\n      \"cfg_scale_override\": 0,\n      \"sampler\": [\n        \"77\",\n        0\n      ]\n    },\n    \"class_type\": \"DetailDaemonSamplerNode\",\n    \"_meta\": {\n      \"title\": \"Detail Daemon Sampler\"\n    }\n  },\n  \"76\": {\n    \"inputs\": {\n      \"noise_seed\": 147638433643735\n    },\n    \"class_type\": \"RandomNoise\",\n    \"_meta\": {\n      \"title\": \"RandomNoise\"\n    }\n  },\n  \"77\": {\n    \"inputs\": {\n      \"dishonesty_factor\": -0.010000000000000002,\n      \"start_percent\": 0.1,\n      \"end_percent\": 0.9,\n      \"sampler\": [\n        \"79\",\n        0\n      ]\n    },\n    \"class_type\": \"LyingSigmaSampler\",\n    \"_meta\": {\n      \"title\": \"Lying Sigma Sampler\"\n    }\n  },\n  \"78\": {\n    \"inputs\": {\n      \"noise\": [\n        \"76\",\n        0\n      ],\n      \"guider\": [\n        \"74\",\n        0\n      ],\n      \"sampler\": [\n        \"75\",\n        0\n      ],\n      \"sigmas\": [\n        \"81\",\n        0\n      ],\n      \"latent_image\": [\n        \"101\",\n        0\n      ]\n    },\n    \"class_type\": \"SamplerCustomAdvanced\",\n    \"_meta\": {\n      \"title\": \"SamplerCustomAdvanced\"\n    }\n  },\n  \"79\": {\n    \"inputs\": {\n      \"sampler_name\": \"euler_ancestral\"\n    },\n    \"class_type\": \"KSamplerSelect\",\n    \"_meta\": {\n      \"title\": \"KSamplerSelect\"\n    }\n  },\n  \"81\": {\n    \"inputs\": {\n      \"steps\": 20,\n      \"sigma_0\": 1.0010000000000001,\n      \"sigma_1\": 0.9684,\n      \"sigma_2\": 0.9315,\n      \"sigma_3\": 0.873,\n      \"sigma_4\": 0.8494,\n      \"sigma_5\": 0.7954,\n      \"sigma_6\": 0.7444000000000001,\n      \"sigma_7\": 0.6984,\n      \"sigma_8\": 0.6523,\n      \"sigma_9\": 0.5567,\n      \"sigma_10\": 0.47840000000000005,\n      \"sigma_11\": 0.3647,\n      \"sigma_12\": 0.261,\n      \"sigma_13\": 0.23340000000000002,\n      \"sigma_14\": 0.21000000000000002,\n      \"sigma_15\": 0.18000000000000002,\n      \"sigma_16\": 0.15,\n      \"sigma_17\": 0.12000000000000001,\n      \"sigma_18\": 0.09000000000000001,\n      \"sigma_19\": 0.060000000000000005,\n      \"sigma_20\": 0,\n      \"sigma_21\": 0,\n      \"sigma_22\": 0,\n      \"sigma_23\": 0,\n      \"sigma_24\": 0,\n      \"sigma_25\": 0\n    },\n    \"class_type\": \"CustomScheduler\",\n    \"_meta\": {\n      \"title\": \"CustomScheduler\"\n    }\n  },\n  \"82\": {\n    \"inputs\": {\n      \"unet_name\": \"hidream-i1-dev-q3_k_m.gguf\"\n    },\n    \"class_type\": \"UnetLoaderGGUF\",\n    \"_meta\": {\n      \"title\": \"Unet Loader (GGUF)\"\n    }\n  },\n  \"101\": {\n    \"inputs\": {\n      \"width\": 720,\n      \"height\": 1280,\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\n      \"title\": \"Empty Latent Image\"\n    }\n  }\n}"
+      },
+      "type": "n8n-nodes-comfyui.comfyui",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        780
+      ],
+      "id": "e434e81a-1c04-4e5c-8ada-0db8e5ef345e",
+      "name": "Comfy HiDream",
+      "credentials": {
+        "comfyUIApi": {
+          "id": "htNUXGzgCxTZ1mj6",
+          "name": "ComfyUI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflow": "={\n  \"1\": {\n    \"inputs\": {\n      \"ckpt_name\": \"ilustmix_v40.safetensors\"\n    },\n    \"class_type\": \"CheckpointLoaderSimple\",\n    \"_meta\": {\n      \"title\": \"Load Checkpoint\"\n    }\n  },\n  \"2\": {\n    \"inputs\": {\n      \"stop_at_clip_layer\": -2,\n      \"clip\": [\n        \"1\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPSetLastLayer\",\n    \"_meta\": {\n      \"title\": \"CLIP Set Last Layer\"\n    }\n  },\n  \"3\": {\n    \"inputs\": {\n      \"text\": \"{{ $json.character.replace(/\\r?\\n/g, '\\\\n') }}. {{ $json.scene_description.replace(/\\r?\\n/g, '\\\\n') }}\\n\\n(masterpiece, best quality, high quality, highres), absurdres, no humans, masterpiece, very aesthetic, absurdres\",\n      \"clip\": [\n        \"9\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"4\": {\n    \"inputs\": {\n      \"text\": \"(worst quality, low quality, bad quality), (low resolution, blurry, pixelated), bad anatomy, distorted anatomy, extra limbs, extra hands, extra fingers, missing limbs, missing hands, mutated hands, deformed hands, twisted hands, bad hands, fused fingers, malformed fingers, poorly drawn hands, poorly drawn face, (ugly, disfigured, grotesque), (mutated, malformed, unnatural), (glitch, artifacts, watermark, text, logo, signature), (sketch, cartoon, painting, crayon, graphite, abstract, impressionistic, figuration-libre), (simplified, low-detail, flat), (backlight, overexposed, underexposed), (censored, nsfw), (furry, human, 1girl, muscular), (dull, boring, earthly, mundane), (cluttered, messy, chaotic), (duplicate, repetitive), (out of focus, motion blur, depth of field issues), (jpeg artifacts, compression artifacts)\",\n      \"clip\": [\n        \"9\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncode\",\n    \"_meta\": {\n      \"title\": \"CLIP Text Encode (Prompt)\"\n    }\n  },\n  \"5\": {\n    \"inputs\": {\n      \"seed\": 520746328669670,\n      \"steps\": 29,\n      \"cfg\": 5.8,\n      \"sampler_name\": \"euler\",\n      \"scheduler\": \"normal\",\n      \"denoise\": 1,\n      \"model\": [\n        \"9\",\n        0\n      ],\n      \"positive\": [\n        \"3\",\n        0\n      ],\n      \"negative\": [\n        \"4\",\n        0\n      ],\n      \"latent_image\": [\n        \"6\",\n        0\n      ]\n    },\n    \"class_type\": \"KSampler\",\n    \"_meta\": {\n      \"title\": \"KSampler\"\n    }\n  },\n  \"6\": {\n    \"inputs\": {\n      \"width\": 720,\n      \"height\": 1280,\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\n      \"title\": \"Empty Latent Image\"\n    }\n  },\n  \"7\": {\n    \"inputs\": {\n      \"samples\": [\n        \"5\",\n        0\n      ],\n      \"vae\": [\n        \"1\",\n        2\n      ]\n    },\n    \"class_type\": \"VAEDecode\",\n    \"_meta\": {\n      \"title\": \"VAE Decode\"\n    }\n  },\n  \"8\": {\n    \"inputs\": {\n      \"filename_prefix\": \"ComfyUI\",\n      \"images\": [\n        \"7\",\n        0\n      ]\n    },\n    \"class_type\": \"SaveImage\",\n    \"_meta\": {\n      \"title\": \"Save Image\"\n    }\n  },\n  \"9\": {\n    \"inputs\": {\n      \"lora_01\": \"illustriousXL_stabilizer_v1.23.safetensors\",\n      \"strength_01\": 0.20000000000000004,\n      \"lora_02\": \"Smooth-Lighting-Enhancer_v2.safetensors\",\n      \"strength_02\": 0.20000000000000004,\n      \"lora_03\": \"lora-sdxl-perfect-eyes.safetensors\",\n      \"strength_03\": 0.5000000000000001,\n      \"lora_04\": \"noobai_vpred_1_masterpieces_v23.safetensors\",\n      \"strength_04\": 0.5000000000000001,\n      \"model\": [\n        \"1\",\n        0\n      ],\n      \"clip\": [\n        \"2\",\n        0\n      ]\n    },\n    \"class_type\": \"Lora Loader Stack (rgthree)\",\n    \"_meta\": {\n      \"title\": \"Lora Loader Stack (rgthree)\"\n    }\n  }\n}"
+      },
+      "type": "n8n-nodes-comfyui.comfyui",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        840
+      ],
+      "id": "075c3677-8a25-4939-9452-7b9818a77e20",
+      "name": "Comfy Illustrious",
+      "credentials": {
+        "comfyUIApi": {
+          "id": "htNUXGzgCxTZ1mj6",
+          "name": "ComfyUI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": "=1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        720
+      ],
+      "id": "422b052b-a502-443e-a331-a53404ac4987",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9a23b0e-3486-4264-b8b8-8bc498dcb8ab",
+                    "leftValue": "={{ $('On form submission').item.json['Image Model (Default: FLUX)'] }}",
+                    "rightValue": "LocalAI",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('On form submission').item.json['Image Model (Default: FLUX)'] }}",
+                    "rightValue": "SDXL (Fast)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d0ea954f-65bd-43f4-9387-1a27d06dcab6"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1ea90232-cc77-4366-bd69-98d3dff94315",
+                    "leftValue": "={{ $('On form submission').item.json['Image Model (Default: FLUX)'] }}",
+                    "rightValue": "HiDream (Slow)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4c36cc1a-8fc5-4b2e-8a24-9944616baec9",
+                    "leftValue": "={{ $('On form submission').item.json['Image Model (Default: FLUX)'] }}",
+                    "rightValue": "Illustrious",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e8f25594-d878-4c34-9dc3-21370b64ab94",
+                    "leftValue": "=",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1100,
+        700
+      ],
+      "id": "8e9ec852-9ee6-4d2e-8c2d-c22ded43c96f",
+      "name": "Image Gen Model"
     },
     {
       "parameters": {
         "model": "qwen3:latest",
         "options": {
-          "temperature": 0.9,
           "format": "json"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        780,
-        360
+        1060,
+        460
       ],
-      "id": "9225cfee-7def-47cc-b488-87d0fe7caddd",
+      "id": "a8c03c9a-e5b5-4d61-b727-2d519464f575",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -218,11 +464,11 @@
             {
               "fieldLabel": "Topic",
               "fieldType": "textarea",
-              "placeholder": "=",
+              "placeholder": "=An astronaut cat visiting the moon for the first time",
               "requiredField": true
             },
             {
-              "fieldLabel": "Language",
+              "fieldLabel": "Language (Default: French)",
               "fieldType": "dropdown",
               "fieldOptions": {
                 "values": [
@@ -231,6 +477,29 @@
                   },
                   {
                     "option": "English"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Image Model (Default: FLUX)",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "SDXL (Fast)"
+                  },
+                  {
+                    "option": "FLUX"
+                  },
+                  {
+                    "option": "HiDream (Slow)"
+                  },
+                  {
+                    "option": "Illustrious"
+                  },
+                  {
+                    "option": "LocalAI"
                   }
                 ]
               }
@@ -250,27 +519,149 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.2,
       "position": [
-        0,
-        0
+        280,
+        100
       ],
-      "id": "4717edc7-19cf-4458-bd37-06f45f720f51",
+      "id": "79a86e39-0e3b-4f38-982f-4888384d05d5",
       "name": "On form submission",
       "webhookId": "b86f3d53-d2d5-42e9-9edc-b52ee891419c"
-    }
-  ],
-  "pinData": {
-    "On form submission": [
-      {
-        "json": {
-          "Topic": "an astronaut cat vising the moon for the first time",
-          "Language": "English",
-          "submittedAt": "2025-05-25T22:36:25.544+02:00",
-          "formMode": "test"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.character }} {{ $json.scene_description }}. (((masterpiece))),((best quality)) | Bad Hands, Missing Fingers, Cropped, Worst Quality, Low Quality, Ugly Face, Old Face, Lowres, Low Details, Overexposed, Underexposed, Dark Shadows, Gritty, Grainy, Blurry, Noisy",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1280,
+        660
+      ],
+      "id": "b658f2b9-2b52-49dd-b633-0ee22b05e3ef",
+      "name": "Generate Images",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "6gGP4REjmCMtMnvE",
+          "name": "LocalAI"
         }
       }
-    ]
-  },
+    },
+    {
+      "parameters": {
+        "content": "## Story Generation",
+        "height": 580,
+        "width": 1860,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        20
+      ],
+      "id": "321d4fcd-71fe-43ad-a220-7480553fc0d8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Images Generation",
+        "height": 440,
+        "width": 1860,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        460,
+        640
+      ],
+      "id": "adb9c068-249d-4137-8c79-cf413d4be859",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Initial Setup\n\nTopic:\n  - Topic of the story to be generated\n\n\nImage Model:\n  - LocalAI\n  - SDXL (Fast)\n  - FLUX\n  - HiDream (Slow)\n  - Illustrious",
+        "height": 580,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        20,
+        20
+      ],
+      "id": "7ab4d13b-7a83-4b55-a5a9-669ea9f00445",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "workflow": "={\n  \"3\": {\n    \"inputs\": {\n      \"noise_seed\": 790952063352168,\n      \"steps\": 8,\n      \"timestep_to_start_cfg\": 1,\n      \"true_gs\": 2,\n      \"image_to_image_strength\": 0,\n      \"denoise_strength\": 1,\n      \"model\": [\n        \"108\",\n        0\n      ],\n      \"conditioning\": [\n        \"5\",\n        0\n      ],\n      \"neg_conditioning\": [\n        \"19\",\n        0\n      ],\n      \"latent_image\": [\n        \"6\",\n        0\n      ]\n    },\n    \"class_type\": \"XlabsSampler\",\n    \"_meta\": {\n      \"title\": \"Xlabs Sampler\"\n    }\n  },\n  \"4\": {\n    \"inputs\": {\n      \"clip_name1\": \"clip_l.safetensors\",\n      \"clip_name2\": \"t5xxl_fp8_e4m3fn_scaled.safetensors\",\n      \"type\": \"flux\",\n      \"device\": \"default\"\n    },\n    \"class_type\": \"DualCLIPLoader\",\n    \"_meta\": {\n      \"title\": \"DualCLIPLoader\"\n    }\n  },\n  \"5\": {\n    \"inputs\": {\n      \"clip_l\": \"{{ $json.character.replace(/\\r?\\n/g, '\\\\n') }}. {{ $json.scene_description.replace(/\\r?\\n/g, '\\\\n') }}.\\n\\n(masterpiece, best quality, high quality, highres), absurdres, no humans, masterpiece, very aesthetic, absurdres\",\n      \"t5xxl\": \"{{ $json.character.replace(/\\r?\\n/g, '\\\\n') }}. {{ $json.scene_description.replace(/\\r?\\n/g, '\\\\n') }}.\\n\\n(masterpiece, best quality, high quality, highres), absurdres, no humans, masterpiece, very aesthetic, absurdres\",\n      \"guidance\": 2.7,\n      \"clip\": [\n        \"108\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncodeFlux\",\n    \"_meta\": {\n      \"title\": \"CLIPTextEncodeFlux\"\n    }\n  },\n  \"6\": {\n    \"inputs\": {\n      \"width\": 720,\n      \"height\": 1280,\n      \"batch_size\": 1\n    },\n    \"class_type\": \"EmptyLatentImage\",\n    \"_meta\": {\n      \"title\": \"Empty Latent Image\"\n    }\n  },\n  \"7\": {\n    \"inputs\": {\n      \"samples\": [\n        \"3\",\n        0\n      ],\n      \"vae\": [\n        \"8\",\n        0\n      ]\n    },\n    \"class_type\": \"VAEDecode\",\n    \"_meta\": {\n      \"title\": \"VAE Decode\"\n    }\n  },\n  \"8\": {\n    \"inputs\": {\n      \"vae_name\": \"ae.safetensors\"\n    },\n    \"class_type\": \"VAELoader\",\n    \"_meta\": {\n      \"title\": \"Load VAE\"\n    }\n  },\n  \"19\": {\n    \"inputs\": {\n      \"clip_l\": \"\",\n      \"t5xxl\": \"(worst quality, low quality, bad quality), (low resolution, blurry, pixelated), bad anatomy, distorted anatomy, extra limbs, extra hands, extra fingers, missing limbs, missing hands, mutated hands, deformed hands, twisted hands, bad hands, fused fingers, malformed fingers, poorly drawn hands, poorly drawn face, (ugly, disfigured, grotesque), (mutated, malformed, unnatural), (glitch, artifacts, watermark, text, logo, signature), (sketch, cartoon, painting, crayon, graphite, abstract, impressionistic, figuration-libre), (simplified, low-detail, flat), (backlight, overexposed, underexposed), (censored, nsfw), (furry, human, 1girl, muscular), (dull, boring, earthly, mundane), (cluttered, messy, chaotic), (duplicate, repetitive), (out of focus, motion blur, depth of field issues), (jpeg artifacts, compression artifacts)\",\n      \"guidance\": 3.5,\n      \"clip\": [\n        \"108\",\n        1\n      ]\n    },\n    \"class_type\": \"CLIPTextEncodeFlux\",\n    \"_meta\": {\n      \"title\": \"CLIPTextEncodeFlux\"\n    }\n  },\n  \"21\": {\n    \"inputs\": {\n      \"images\": [\n        \"7\",\n        0\n      ]\n    },\n    \"class_type\": \"PreviewImage\",\n    \"_meta\": {\n      \"title\": \"t2i output\"\n    }\n  },\n  \"55\": {\n    \"inputs\": {\n      \"unet_name\": \"flux1-dev-fp8-e4m3fn.safetensors\",\n      \"weight_dtype\": \"fp8_e4m3fn\"\n    },\n    \"class_type\": \"UNETLoader\",\n    \"_meta\": {\n      \"title\": \"Load Diffusion Model\"\n    }\n  },\n  \"106\": {\n    \"inputs\": {\n      \"lora_name\": \"flux-turbo-alpha.safetensors\",\n      \"strength_model\": 1,\n      \"model\": [\n        \"55\",\n        0\n      ]\n    },\n    \"class_type\": \"LoraLoaderModelOnly\",\n    \"_meta\": {\n      \"title\": \"LoraLoaderModelOnly\"\n    }\n  },\n  \"108\": {\n    \"inputs\": {\n      \"lora_01\": \"aidmaImageUprader-FLUX-v0.3.safetensors\",\n      \"strength_01\": 0.7000000000000002,\n      \"lora_02\": \"aidmaHyperrealism-FLUX-v0.3.safetensors\",\n      \"strength_02\": 0.5000000000000001,\n      \"lora_03\": \"black_fantasy_1.0.safetensors\",\n      \"strength_03\": 0.5000000000000001,\n      \"lora_04\": \"XRSTYLE_FLUX.safetensors\",\n      \"strength_04\": 0.5000000000000001,\n      \"model\": [\n        \"106\",\n        0\n      ],\n      \"clip\": [\n        \"4\",\n        0\n      ]\n    },\n    \"class_type\": \"Lora Loader Stack (rgthree)\",\n    \"_meta\": {\n      \"title\": \"Lora Loader Stack (rgthree)\"\n    }\n  }\n}"
+      },
+      "type": "n8n-nodes-comfyui.comfyui",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        900
+      ],
+      "id": "bbd4bf98-22f7-4976-b4fd-5ef3c75b3202",
+      "name": "Comfy FLUX",
+      "credentials": {
+        "comfyUIApi": {
+          "id": "htNUXGzgCxTZ1mj6",
+          "name": "ComfyUI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
   "connections": {
+    "Create TMP Folder": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Images": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy SDXL": {
+      "main": [
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Structured Output Parser - 1": {
       "ai_outputParser": [
         [
@@ -326,6 +717,22 @@
         ]
       ]
     },
+    "Generate Visual Scenes": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create TMP Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Structured Output Parser - 3": {
       "ai_outputParser": [
         [
@@ -352,6 +759,11 @@
       "ai_memory": [
         [
           {
+            "node": "Generate a Short Story",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
             "node": "Develop a Narrative Outline",
             "type": "ai_memory",
             "index": 0
@@ -368,11 +780,6 @@
           },
           {
             "node": "Generate Narrative Script",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "Generate a Short Story",
             "type": "ai_memory",
             "index": 0
           }
@@ -396,6 +803,79 @@
           {
             "node": "Generate Narrative Script",
             "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy HiDream": {
+      "main": [
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy Illustrious": {
+      "main": [
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Image Gen Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Gen Model": {
+      "main": [
+        [
+          {
+            "node": "Generate Images",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comfy SDXL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comfy HiDream",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comfy Illustrious",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comfy FLUX",
+            "type": "main",
             "index": 0
           }
         ]
@@ -442,17 +922,39 @@
           }
         ]
       ]
+    },
+    "Generate Images": {
+      "main": [
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comfy FLUX": {
+      "main": [
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a4b018ab-fcef-4d3d-a84e-645a37b4c4a9",
+  "versionId": "2438b4af-7f8b-48f6-91c3-9a181a6670fb",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "121c0a0c44ee23a0e3cfd057cf4fe107dbf61a7b0ac4cfdcc4832335e630bf85"
   },
-  "id": "FpaNUFcQS1RPSOjp",
+  "id": "mguzmJxB28ivmLjl",
   "tags": []
 }
